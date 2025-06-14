@@ -1,88 +1,70 @@
-import streamlit as st
+import pygame
 import random
-import time
+import os
 
-st.set_page_config(page_title="Rắn Ăn Mồi", layout="wide")
+# Cài đặt
+WIDTH, HEIGHT = 900, 600
+PLAYER_INIT_RADIUS = 25
+FOOD_RADIUS = 8
+FOOD_COUNT = 25
+PLAYER_SPEED = 2.5
 
-GRID_SIZE = 20
-INIT_LENGTH = 3
-DELAY = 0.1  # Giảm delay
+# Khởi tạo pygame
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Chấm tròn ăn mồi - Mini Agar.io")
+clock = pygame.time.Clock()
+font = pygame.font.SysFont("arial", 20)
 
-if "snake" not in st.session_state:
-    st.session_state.snake = [(10, 10 - i) for i in range(INIT_LENGTH)]
-    st.session_state.direction = (0, 1)
-    st.session_state.food = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
-    st.session_state.score = 0
-    st.session_state.game_over = False
+# Skin: "dot" hoặc "crocodile"
+SKINS = ["dot", "crocodile"]
+current_skin = 0
 
-opposite = {
-    (0, 1): (0, -1),
-    (0, -1): (0, 1),
-    (1, 0): (-1, 0),
-    (-1, 0): (1, 0),
-}
+# Load ảnh cá sấu (đổi tên file nếu cần)
+if os.path.exists("crocodile.png"):
+    crocodile_img = pygame.image.load("crocodile.png")
+    crocodile_img = pygame.transform.scale(crocodile_img, (PLAYER_INIT_RADIUS*2, PLAYER_INIT_RADIUS*2))
+else:
+    crocodile_img = None
 
-def move_snake():
-    if st.session_state.game_over:
-        return
+def random_color():
+    colors = [(30,214,251),(255,31,143),(243,233,20),(255,171,0),(21,245,135),(74,60,255),(255,63,52)]
+    return random.choice(colors)
 
-    head = st.session_state.snake[0]
-    dx, dy = st.session_state.direction
-    new_head = ((head[0] + dx) % GRID_SIZE, (head[1] + dy) % GRID_SIZE)
+def spawn_food():
+    return [
+        {
+            "x": random.randint(FOOD_RADIUS, WIDTH-FOOD_RADIUS),
+            "y": random.randint(FOOD_RADIUS, HEIGHT-FOOD_RADIUS),
+            "color": random_color()
+        }
+        for _ in range(FOOD_COUNT)
+    ]
 
-    if new_head in st.session_state.snake:
-        st.session_state.game_over = True
-        return
+# Khởi tạo người chơi và mồi
+player = {"x": WIDTH//2, "y": HEIGHT//2, "r": PLAYER_INIT_RADIUS, "color": (58,217,58)}
+foods = spawn_food()
 
-    st.session_state.snake.insert(0, new_head)
-
-    if new_head == st.session_state.food:
-        st.session_state.score += 1
-        while True:
-            new_food = (random.randint(0, GRID_SIZE - 1), random.randint(0, GRID_SIZE - 1))
-            if new_food not in st.session_state.snake:
-                break
-        st.session_state.food = new_food
+def draw_player():
+    if SKINS[current_skin] == "dot":
+        pygame.draw.circle(screen, player["color"], (int(player["x"]), int(player["y"])), int(player["r"]))
+        pygame.draw.circle(screen, (255,230,0), (int(player["x"]), int(player["y"])), int(player["r"]), 3)
+        label = font.render("naki", True, (255,255,255))
+        screen.blit(label, (player["x"]-label.get_width()//2, player["y"]-label.get_height()//2))
+    elif SKINS[current_skin] == "crocodile" and crocodile_img:
+        scale = int(player["r"]*2)
+        img = pygame.transform.scale(crocodile_img, (scale, scale))
+        screen.blit(img, (player["x"]-player["r"], player["y"]-player["r"]))
     else:
-        st.session_state.snake.pop()
+        pygame.draw.circle(screen, player["color"], (int(player["x"]), int(player["y"])), int(player["r"]))
 
-def draw_board():
-    board = ""
-    for i in range(GRID_SIZE):
-        for j in range(GRID_SIZE):
-            if (i, j) == st.session_state.food:
-                board += f"<span style='color: red; font-size: 24px;'>●</span>"
-            elif (i, j) == st.session_state.snake[0]:
-                board += f"<span style='font-size: 24px;'>🟢</span>"
-            elif (i, j) in st.session_state.snake:
-                board += f"<span style='color: green;'>●</span>"
-            else:
-                board += "<span style='color: lightgray;'>·</span>"
-        board += "<br>"
-    st.markdown(f"<div style='font-family: monospace;'>{board}</div>", unsafe_allow_html=True)
+def draw_foods():
+    for f in foods:
+        pygame.draw.circle(screen, f["color"], (f["x"], f["y"]), FOOD_RADIUS)
 
-st.markdown(\"\"\"
-<h1 style='text-align: center; color: #33aa66;'>🐍 Rắn Ăn Mồi - Phiên Bản Chấm Tròn</h1>
-\"\"\", unsafe_allow_html=True)
-
-st.write(f\"### 🎯 Điểm số: `{st.session_state.score}`\")
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    if st.button(\"⬅️\") and st.session_state.direction != (0, 1):
-        st.session_state.direction = (0, -1)
-with col2:
-    if st.button(\"⬆️\") and st.session_state.direction != (1, 0):
-        st.session_state.direction = (-1, 0)
-    if st.button(\"⬇️\") and st.session_state.direction != (-1, 0):
-        st.session_state.direction = (1, 0)
-with col3:
-    if st.button(\"➡️\") and st.session_state.direction != (0, -1):
-        st.session_state.direction = (0, 1)
-
-move_snake()
-draw_board()
-
-if st.session_state.game_over:
-    st.error(\"💀 Trò chơi kết thúc! Rắn tự cắn chính mình!\")
-    if st.button(\"🔁 Chơi lại\"):\n        for key in [\"snake\", \"direction\", \"food\", \"score\", \"game_over\"]:\n            st.session_state.pop(key, None)\n        st.experimental_rerun()\nelse:\n    time.sleep(DELAY)\n    st.experimental_rerun()
+def eat_food():
+    global foods
+    new_foods = []
+    for f in foods:
+        dx = f["x"] - player["x"]
+        dy = f["y"] - player["y
