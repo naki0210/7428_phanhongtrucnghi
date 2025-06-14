@@ -1,11 +1,11 @@
 import streamlit as st
 import random
 
-st.set_page_config(page_title="Tài Xỉu Dễ Thương", page_icon="🎲", layout="centered")
+st.set_page_config(page_title="Tài Xỉu Thân Thiện s1tg", page_icon="🎲", layout="centered")
 
 st.markdown("""
     <div style='text-align: center;'>
-        <h1 style='color: #ff69b4;'>🎲 Giả Lập Tài Xỉu Dễ Thương 🎲</h1>
+        <h1 style='color: #ff69b4;'>🎲 Tài Xỉu Thân Thiện s1tg 🎲</h1>
     </div>
 """, unsafe_allow_html=True)
 
