@@ -1,118 +1,115 @@
-import pygame
+import streamlit as st
 import random
-import os
+import matplotlib.pyplot as plt
 
-# Cài đặt
-WIDTH, HEIGHT = 900, 600
-PLAYER_INIT_RADIUS = 25
-FOOD_RADIUS = 8
-FOOD_COUNT = 25
-PLAYER_SPEED = 2.5
+st.set_page_config(page_title="Game Chấm Tròn - Streamlit", layout="centered")
+st.title("Game Chấm Tròn (Agar.io mini demo)")
 
-# Khởi tạo pygame
-pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Chấm tròn ăn mồi - Mini Agar.io")
-clock = pygame.time.Clock()
-font = pygame.font.SysFont("arial", 20)
-
-# Skin: "dot" hoặc "crocodile"
-SKINS = ["dot", "crocodile"]
-current_skin = 0
-
-# Load ảnh cá sấu (đổi tên file nếu cần)
-if os.path.exists("crocodile.png"):
-    crocodile_img = pygame.image.load("crocodile.png")
-    crocodile_img = pygame.transform.scale(crocodile_img, (PLAYER_INIT_RADIUS*2, PLAYER_INIT_RADIUS*2))
-else:
-    crocodile_img = None
-
-def random_color():
-    colors = [(30,214,251),(255,31,143),(243,233,20),(255,171,0),(21,245,135),(74,60,255),(255,63,52)]
-    return random.choice(colors)
-
-def spawn_food():
-    return [
-        {
-            "x": random.randint(FOOD_RADIUS, WIDTH-FOOD_RADIUS),
-            "y": random.randint(FOOD_RADIUS, HEIGHT-FOOD_RADIUS),
-            "color": random_color()
-        }
-        for _ in range(FOOD_COUNT)
+# Khởi tạo trạng thái
+if "player_size" not in st.session_state:
+    st.session_state.player_size = 25
+    st.session_state.score = 0
+    st.session_state.foods = [
+        {"x": random.randint(10, 90), "y": random.randint(10, 90)} for _ in range(10)
     ]
+    st.session_state.player_skin = "dot"
+    st.session_state.player_x = 50
+    st.session_state.player_y = 50
 
-# Khởi tạo người chơi và mồi
-player = {"x": WIDTH//2, "y": HEIGHT//2, "r": PLAYER_INIT_RADIUS, "color": (58,217,58)}
-foods = spawn_food()
+# Giao diện chọn skin
+skin = st.radio("Chọn skin nhân vật", ["Chấm tròn", "Cá sấu mini"])
+if skin == "Chấm tròn":
+    st.session_state.player_skin = "dot"
+else:
+    st.session_state.player_skin = "crocodile"
 
-def draw_player():
-    if SKINS[current_skin] == "dot":
-        pygame.draw.circle(screen, player["color"], (int(player["x"]), int(player["y"])), int(player["r"]))
-        pygame.draw.circle(screen, (255,230,0), (int(player["x"]), int(player["y"])), int(player["r"]), 3)
-        label = font.render("naki", True, (255,255,255))
-        screen.blit(label, (player["x"]-label.get_width()//2, player["y"]-label.get_height()//2))
-    elif SKINS[current_skin] == "crocodile" and crocodile_img:
-        scale = int(player["r"]*2)
-        img = pygame.transform.scale(crocodile_img, (scale, scale))
-        screen.blit(img, (player["x"]-player["r"], player["y"]-player["r"]))
+st.write(f"Điểm số: {st.session_state.score}")
+st.write(f"Kích thước nhân vật: {st.session_state.player_size}")
+
+# Điều khiển di chuyển
+col1, col2, col3 = st.columns(3)
+with col1:
+    if st.button("⬆️"):
+        st.session_state.player_y = max(5, st.session_state.player_y - 5)
+with col2:
+    st.write("")
+with col3:
+    if st.button("⬇️"):
+        st.session_state.player_y = min(95, st.session_state.player_y + 5)
+col4, col5, col6 = st.columns(3)
+with col4:
+    if st.button("⬅️"):
+        st.session_state.player_x = max(5, st.session_state.player_x - 5)
+with col5:
+    st.write("")
+with col6:
+    if st.button("➡️"):
+        st.session_state.player_x = min(95, st.session_state.player_x + 5)
+
+# Kiểm tra ăn mồi
+foods_left = []
+for f in st.session_state.foods:
+    dx = f["x"] - st.session_state.player_x
+    dy = f["y"] - st.session_state.player_y
+    dist = (dx ** 2 + dy ** 2) ** 0.5
+    if dist < st.session_state.player_size / 4 + 2:  # Nếu chạm vào mồi
+        st.session_state.player_size += 2
+        st.session_state.score += 10
     else:
-        pygame.draw.circle(screen, player["color"], (int(player["x"]), int(player["y"])), int(player["r"]))
+        foods_left.append(f)
+# Sinh thêm mồi nếu thiếu
+while len(foods_left) < 10:
+    foods_left.append({"x": random.randint(10, 90), "y": random.randint(10, 90)})
+st.session_state.foods = foods_left
 
-def draw_foods():
-    for f in foods:
-        pygame.draw.circle(screen, f["color"], (f["x"], f["y"]), FOOD_RADIUS)
-
-def eat_food():
-    global foods
-    new_foods = []
-    for f in foods:
-        dx = f["x"] - player["x"]
-        dy = f["y"] - player["y"]  # Đã sửa lỗi thiếu dấu ngoặc kép ở đây
-        dist = (dx**2 + dy**2) ** 0.5
-        if dist < player["r"] + FOOD_RADIUS:
-            player["r"] += 1.2
-        else:
-            new_foods.append(f)
-    if len(new_foods) < FOOD_COUNT:
-        new_foods += spawn_food()[:FOOD_COUNT-len(new_foods)]
-    foods[:] = new_foods
-
-def move(keys):
-    dx = dy = 0
-    if keys[pygame.K_UP] or keys[pygame.K_w]: dy -= 1
-    if keys[pygame.K_DOWN] or keys[pygame.K_s]: dy += 1
-    if keys[pygame.K_LEFT] or keys[pygame.K_a]: dx -= 1
-    if keys[pygame.K_RIGHT] or keys[pygame.K_d]: dx += 1
-    if dx or dy:
-        norm = (dx**2 + dy**2) ** 0.5
-        player["x"] += PLAYER_SPEED * dx / norm if norm else 0
-        player["y"] += PLAYER_SPEED * dy / norm if norm else 0
-    # Giới hạn bản đồ
-    player["x"] = min(max(player["r"], player["x"]), WIDTH-player["r"])
-    player["y"] = min(max(player["r"], player["y"]), HEIGHT-player["r"])
-
-def draw_info():
-    skin_label = font.render(f"Skin: {SKINS[current_skin]} (Nhấn Space để đổi)", True, (60,60,60))
-    screen.blit(skin_label, (10,10))
-    score_label = font.render(f"Score: {int(player['r']-PLAYER_INIT_RADIUS)*10}", True, (60,60,60))
-    screen.blit(score_label, (10, 35))
-
-# Vòng lặp chính
-running = True
-while running:
-    screen.fill((246,251,255))
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            current_skin = (current_skin+1)%len(SKINS)
-    keys = pygame.key.get_pressed()
-    move(keys)
-    eat_food()
-    draw_foods()
-    draw_player()
-    draw_info()
-    pygame.display.flip()
-    clock.tick(60)
-
-pygame.quit()
+# Hiển thị bản đồ bằng matplotlib
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.set_xlim(0, 100)
+ax.set_ylim(0, 100)
+# Vẽ nhân vật
+if st.session_state.player_skin == "dot":
+    player_circle = plt.Circle(
+        (st.session_state.player_x, st.session_state.player_y),
+        st.session_state.player_size / 4,
+        color="green",
+        zorder=2,
+    )
+    ax.add_patch(player_circle)
+    ax.text(
+        st.session_state.player_x,
+        st.session_state.player_y,
+        "naki",
+        ha="center",
+        va="center",
+        color="white",
+        fontsize=10,
+        zorder=3,
+        weight="bold",
+    )
+else:
+    # Vẽ hình chữ nhật tượng trưng cá sấu mini (bạn có thể thay bằng hình ảnh thực tế nếu thích)
+    crocodile = plt.Rectangle(
+        (st.session_state.player_x - st.session_state.player_size / 4, st.session_state.player_y - st.session_state.player_size / 8),
+        st.session_state.player_size / 2,
+        st.session_state.player_size / 4,
+        color="darkgreen",
+        zorder=2,
+    )
+    ax.add_patch(crocodile)
+    ax.text(
+        st.session_state.player_x,
+        st.session_state.player_y,
+        "🐊",
+        ha="center",
+        va="center",
+        color="white",
+        fontsize=12,
+        zorder=3,
+        weight="bold",
+    )
+# Vẽ các mồi
+for f in st.session_state.foods:
+    food = plt.Circle((f["x"], f["y"]), 2, color="red", zorder=1)
+    ax.add_patch(food)
+ax.axis("off")
+st.pyplot(fig)
