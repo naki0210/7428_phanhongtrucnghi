@@ -67,4 +67,52 @@ def eat_food():
     new_foods = []
     for f in foods:
         dx = f["x"] - player["x"]
-        dy = f["y"] - player["y
+        dy = f["y"] - player["y"]  # Đã sửa lỗi thiếu dấu ngoặc kép ở đây
+        dist = (dx**2 + dy**2) ** 0.5
+        if dist < player["r"] + FOOD_RADIUS:
+            player["r"] += 1.2
+        else:
+            new_foods.append(f)
+    if len(new_foods) < FOOD_COUNT:
+        new_foods += spawn_food()[:FOOD_COUNT-len(new_foods)]
+    foods[:] = new_foods
+
+def move(keys):
+    dx = dy = 0
+    if keys[pygame.K_UP] or keys[pygame.K_w]: dy -= 1
+    if keys[pygame.K_DOWN] or keys[pygame.K_s]: dy += 1
+    if keys[pygame.K_LEFT] or keys[pygame.K_a]: dx -= 1
+    if keys[pygame.K_RIGHT] or keys[pygame.K_d]: dx += 1
+    if dx or dy:
+        norm = (dx**2 + dy**2) ** 0.5
+        player["x"] += PLAYER_SPEED * dx / norm if norm else 0
+        player["y"] += PLAYER_SPEED * dy / norm if norm else 0
+    # Giới hạn bản đồ
+    player["x"] = min(max(player["r"], player["x"]), WIDTH-player["r"])
+    player["y"] = min(max(player["r"], player["y"]), HEIGHT-player["r"])
+
+def draw_info():
+    skin_label = font.render(f"Skin: {SKINS[current_skin]} (Nhấn Space để đổi)", True, (60,60,60))
+    screen.blit(skin_label, (10,10))
+    score_label = font.render(f"Score: {int(player['r']-PLAYER_INIT_RADIUS)*10}", True, (60,60,60))
+    screen.blit(score_label, (10, 35))
+
+# Vòng lặp chính
+running = True
+while running:
+    screen.fill((246,251,255))
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            current_skin = (current_skin+1)%len(SKINS)
+    keys = pygame.key.get_pressed()
+    move(keys)
+    eat_food()
+    draw_foods()
+    draw_player()
+    draw_info()
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()
