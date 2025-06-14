@@ -24,7 +24,7 @@ function App() {
 
   return (
     <div className="container">
-      <h1 className="title">🎲 Giả Lập Tài Xỉu Dễ Thương 🎲</h1>
+      <h1 className="title">Giả Lập Tài Xỉu Dễ Thương</h1>
 
       <div className="dice-row">
         {dice.map((value, index) => (
