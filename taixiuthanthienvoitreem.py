@@ -1,51 +1,29 @@
-from flask import Flask, render_template_string
+import streamlit as st
 import random
 
-app = Flask(__name__)
+st.set_page_config(page_title="Tài Xỉu Dễ Thương", page_icon="🎲", layout="centered")
 
-HTML = '''
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Giả Lập Tài Xỉu</title>
-  <style>
-    body { background-color: #ffe6f0; font-family: Comic Sans MS; text-align: center; }
-    .dice { display: inline-block; font-size: 40px; margin: 10px; background: white; border-radius: 15px; padding: 20px; box-shadow: 2px 2px 8px rgba(0,0,0,0.2);}
-    .btn { background-color: #ff69b4; color: white; padding: 10px 20px; border: none; border-radius: 10px; font-size: 20px; cursor: pointer; }
-    .result { margin-top: 20px; font-size: 24px; color: #d63384; }
-  </style>
-</head>
-<body>
-  <h1>🎲 Giả Lập Tài Xỉu Dễ Thương 🎲</h1>
-  <form method="post">
-    <button class="btn" type="submit">Lắc Xúc Xắc!</button>
-  </form>
-
-  {% if dice %}
-    <div>
-      {% for d in dice %}
-        <div class="dice">{{ d }}</div>
-      {% endfor %}
+st.markdown("""
+    <div style='text-align: center;'>
+        <h1 style='color: #ff69b4;'>🎲 Giả Lập Tài Xỉu Dễ Thương 🎲</h1>
     </div>
-    <div class="result">Kết quả: <b>{{ result }}</b></div>
-  {% endif %}
-</body>
-</html>
-'''
+""", unsafe_allow_html=True)
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    if random.random() < 0.000001:  # ẩn Easter Egg =))
-        return "Bạn thật sự là thầy bói nhân phẩm thượng thừa!"
+if "dice" not in st.session_state:
+    st.session_state.dice = [1, 1, 1]
+    st.session_state.result = ""
 
-    if random.random() < 0.2:  # 20% nhân phẩm kém
-        dice = [1, 1, 1]
-    else:
-        dice = [random.randint(1, 6) for _ in range(3)]
+if st.button("🎯 Lắc Xúc Xắc!", use_container_width=True):
+    st.session_state.dice = [random.randint(1, 6) for _ in range(3)]
+    total = sum(st.session_state.dice)
+    st.session_state.result = "Tài" if total >= 11 else "Xỉu"
 
-    total = sum(dice)
-    result = 'Tài' if total >= 11 else 'Xỉu'
-    return render_template_string(HTML, dice=dice, result=result)
+dice_str = " | ".join(f"🎲 {d}" for d in st.session_state.dice)
+st.markdown(f"<div style='font-size: 36px; text-align: center;'>{dice_str}</div>", unsafe_allow_html=True)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if st.session_state.result:
+    st.markdown(f"""
+        <div style='text-align: center; margin-top: 20px; font-size: 28px; color: #d63384;'>
+            👉 Kết quả: <b>{st.session_state.result}</b>
+        </div>
+    """, unsafe_allow_html=True)
