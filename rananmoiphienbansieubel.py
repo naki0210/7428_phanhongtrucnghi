@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 st.set_page_config(page_title="Game Chấm Tròn - Streamlit", layout="centered")
 st.title("Game Chấm Tròn (Agar.io mini demo)")
 
-# Khởi tạo trạng thái
 if "player_size" not in st.session_state:
     st.session_state.player_size = 25
     st.session_state.score = 0
@@ -16,7 +15,6 @@ if "player_size" not in st.session_state:
     st.session_state.player_x = 50
     st.session_state.player_y = 50
 
-# Giao diện chọn skin
 skin = st.radio("Chọn skin nhân vật", ["Chấm tròn", "Cá sấu mini"])
 if skin == "Chấm tròn":
     st.session_state.player_skin = "dot"
@@ -26,7 +24,6 @@ else:
 st.write(f"Điểm số: {st.session_state.score}")
 st.write(f"Kích thước nhân vật: {st.session_state.player_size}")
 
-# Điều khiển di chuyển
 col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("⬆️"):
@@ -46,27 +43,23 @@ with col6:
     if st.button("➡️"):
         st.session_state.player_x = min(95, st.session_state.player_x + 5)
 
-# Kiểm tra ăn mồi
 foods_left = []
 for f in st.session_state.foods:
     dx = f["x"] - st.session_state.player_x
     dy = f["y"] - st.session_state.player_y
     dist = (dx ** 2 + dy ** 2) ** 0.5
-    if dist < st.session_state.player_size / 4 + 2:  # Nếu chạm vào mồi
+    if dist < st.session_state.player_size / 4 + 2:
         st.session_state.player_size += 2
         st.session_state.score += 10
     else:
         foods_left.append(f)
-# Sinh thêm mồi nếu thiếu
 while len(foods_left) < 10:
     foods_left.append({"x": random.randint(10, 90), "y": random.randint(10, 90)})
 st.session_state.foods = foods_left
 
-# Hiển thị bản đồ bằng matplotlib
 fig, ax = plt.subplots(figsize=(5, 5))
 ax.set_xlim(0, 100)
 ax.set_ylim(0, 100)
-# Vẽ nhân vật
 if st.session_state.player_skin == "dot":
     player_circle = plt.Circle(
         (st.session_state.player_x, st.session_state.player_y),
@@ -87,7 +80,6 @@ if st.session_state.player_skin == "dot":
         weight="bold",
     )
 else:
-    # Vẽ hình chữ nhật tượng trưng cá sấu mini (bạn có thể thay bằng hình ảnh thực tế nếu thích)
     crocodile = plt.Rectangle(
         (st.session_state.player_x - st.session_state.player_size / 4, st.session_state.player_y - st.session_state.player_size / 8),
         st.session_state.player_size / 2,
@@ -107,7 +99,6 @@ else:
         zorder=3,
         weight="bold",
     )
-# Vẽ các mồi
 for f in st.session_state.foods:
     food = plt.Circle((f["x"], f["y"]), 2, color="red", zorder=1)
     ax.add_patch(food)
