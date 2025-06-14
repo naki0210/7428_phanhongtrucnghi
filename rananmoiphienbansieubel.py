@@ -2,11 +2,11 @@ import streamlit as st
 import random
 import time
 
-st.set_page_config(page_title="Rắn Ăn Mồi Chấm Tròn", layout="wide")
+st.set_page_config(page_title="Rắn Ăn Mồi", layout="wide")
 
 GRID_SIZE = 20
 INIT_LENGTH = 3
-DELAY = 0.15
+DELAY = 0.1  # Giảm delay
 
 if "snake" not in st.session_state:
     st.session_state.snake = [(10, 10 - i) for i in range(INIT_LENGTH)]
@@ -53,42 +53,36 @@ def draw_board():
             if (i, j) == st.session_state.food:
                 board += f"<span style='color: red; font-size: 24px;'>●</span>"
             elif (i, j) == st.session_state.snake[0]:
-                board += f"<span style='color: green; font-size: 24px;'>🟢</span>"
+                board += f"<span style='font-size: 24px;'>🟢</span>"
             elif (i, j) in st.session_state.snake:
-                board += f"<span style='color: green; font-size: 18px;'>●</span>"
+                board += f"<span style='color: green;'>●</span>"
             else:
-                board += "<span style='color: #ddd;'>·</span>"
+                board += "<span style='color: lightgray;'>·</span>"
         board += "<br>"
     st.markdown(f"<div style='font-family: monospace;'>{board}</div>", unsafe_allow_html=True)
 
-st.markdown("""
-    <h1 style='text-align: center; color: #33aa66;'>🐍 Rắn Ăn Mồi - Phiên Bản Chấm Tròn</h1>
-""", unsafe_allow_html=True)
+st.markdown(\"\"\"
+<h1 style='text-align: center; color: #33aa66;'>🐍 Rắn Ăn Mồi - Phiên Bản Chấm Tròn</h1>
+\"\"\", unsafe_allow_html=True)
 
-st.write(f"### 🎯 Điểm số: `{st.session_state.score}`")
+st.write(f\"### 🎯 Điểm số: `{st.session_state.score}`\")
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    if st.button("⬅️") and st.session_state.direction != (0, 1):
+    if st.button(\"⬅️\") and st.session_state.direction != (0, 1):
         st.session_state.direction = (0, -1)
 with col2:
-    if st.button("⬆️") and st.session_state.direction != (1, 0):
+    if st.button(\"⬆️\") and st.session_state.direction != (1, 0):
         st.session_state.direction = (-1, 0)
-    if st.button("⬇️") and st.session_state.direction != (-1, 0):
+    if st.button(\"⬇️\") and st.session_state.direction != (-1, 0):
         st.session_state.direction = (1, 0)
 with col3:
-    if st.button("➡️") and st.session_state.direction != (0, -1):
+    if st.button(\"➡️\") and st.session_state.direction != (0, -1):
         st.session_state.direction = (0, 1)
 
 move_snake()
 draw_board()
 
 if st.session_state.game_over:
-    st.error("💀 Trò chơi kết thúc! Rắn tự cắn chính mình!")
-    if st.button("🔁 Chơi lại"):
-        for key in ["snake", "direction", "food", "score", "game_over"]:
-            st.session_state.pop(key, None)
-        st.experimental_rerun()
-else:
-    time.sleep(DELAY)
-    st.experimental_rerun()
+    st.error(\"💀 Trò chơi kết thúc! Rắn tự cắn chính mình!\")
+    if st.button(\"🔁 Chơi lại\"):\n        for key in [\"snake\", \"direction\", \"food\", \"score\", \"game_over\"]:\n            st.session_state.pop(key, None)\n        st.experimental_rerun()\nelse:\n    time.sleep(DELAY)\n    st.experimental_rerun()
